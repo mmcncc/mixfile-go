@@ -18,12 +18,98 @@ type MixFileServer struct {
 }
 
 func (s *MixFileServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	// 简单模拟路由
+	// 添加首页路由逻辑
+	if r.URL.Path == "/" {
+		s.handleIndex(w, r)
+		return
+	}
+
+	// 原有的下载路由
 	if r.URL.Path == "/api/download" {
 		s.handleDownload(w, r)
 		return
 	}
 	w.WriteHeader(http.StatusNotFound)
+}
+
+func (s *MixFileServer) handleIndex(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	fmt.Fprint(w, `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MixFile 提取工具</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f2f5;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+        .card {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            text-align: center;
+            width: 100%;
+            max-width: 400px;
+        }
+        h2 { color: #1a1a1a; margin-bottom: 24px; }
+        input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 20px;
+            border: 1px solid #d9d9d9;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #1677ff;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        button:hover { background-color: #4096ff; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>MixFile 文件提取</h2>
+        <input type="text" id="shareCode" placeholder="请输入 mf:// 开头的分享码" />
+        <button onclick="startDownload()">开始下载</button>
+    </div>
+
+    <script>
+        function startDownload() {
+            const code = document.getElementById('shareCode').value.trim();
+            if (!code) {
+                alert('请输入分享码');
+                return;
+            }
+            // 跳转到下载接口
+            window.location.href = '/api/download?s=' + encodeURIComponent(code);
+        }
+        
+        // 支持回车键触发
+        document.getElementById('shareCode').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') startDownload();
+        });
+    </script>
+</body>
+</html>
+`)
 }
 
 func (s *MixFileServer) handleDownload(w http.ResponseWriter, r *http.Request) {
